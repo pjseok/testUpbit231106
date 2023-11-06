@@ -90,8 +90,18 @@ class MainWindow(QMainWindow, form_class): # 슬롯 클래스
         # 콤보박스의 메뉴 값이 변경되었을 때 호출될 함수 설정
 
     def coin_select_comboBox(self):
-        coin_ticker = self.coin_comboBox.currentText() #콤보박스에서 현재 선택된 ticker 텍스트 가져오기
-        print(coin_ticker)
+        coin_ticker = self.coin_comboBox.currentText()
+        #콤보박스에서 현재 선택된 ticker 텍스트 가져오기
+        # print(coin_ticker)
+        self.ticker = coin_ticker
+        # 콤보박스에서 사용자가 선택한 코인 ticker 값으로 self.ticker 값을 변경
+        self.coin_ticker_label.setText(coin_ticker)
+        self.cvt.close() # while문 종료
+        self.cvt = CoinViewThread(coin_ticker)
+        # 새로운 코인(바뀐) ticker로 다시 시그널 클래스로 객체를 선언
+        self.cvt.coinDateSent.connect(self.fillCoinData)
+        # 다시 시그널 함수 호출-> 새로운 ticker의 정보를 가진 시그널 함수가 실행
+        self.cvt.start()  # 시그널 함수의 쓰레드를 시작
 
     # 시그널클래스에서 보내준 코인정보를 ui에 출력해주는 슬롯함수
     def fillCoinData(self, trade_price, signed_change_rate, acc_trade_price_24h, acc_trade_volume, high_price, low_price,
