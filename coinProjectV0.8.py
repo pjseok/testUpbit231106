@@ -14,6 +14,7 @@ class CoinViewThread(QThread): # 시그널 클래스
 
     # 시그널 함수 정의
     coinDateSent = pyqtSignal(float, float, float, float, float, float, float, float)
+    alarmDataSent = pyqtSignal(float) # 알람용 현재가격 시그널
 
     def __init__(self, ticker):
         # MainWindow에서 시그널클래스로 객체를 선언할 때 ticker를 인수로 전달
@@ -50,6 +51,8 @@ class CoinViewThread(QThread): # 시그널 클래스
                                    float(prev_closing_price),
                                    float(trade_volume))
 
+            self.alarmDataSent.emit(float(trade_price))
+
             time.sleep(1) # api 호출 딜레이(1초마다 한 번씩 업비트 호출)
     def close(self): # close 함수가 호출되면 run 함수(while) 멈춤
         self.alive = False
@@ -66,14 +69,15 @@ class MainWindow(QMainWindow, form_class): # 슬롯 클래스
 
         self.cvt = CoinViewThread(self.ticker) # 시그널 클래스로 객체 선언
         self.cvt.coinDateSent.connect(self.fillCoinData)
+        self.cvt.alarmDataSent.connect(self.alarmCheck)
         self.cvt.start() # 시그널 함수의 쓰레드를 시작
         self.coin_comboBox_setting() # 콤보박스 초기화 셋팅 함수 호출
+        self.alarmButton.clicked.connect(self.alarmButtonAction)
+        # 알람버튼이 클릭되면 alarmButtonAction 함수가 호출
 
     def coin_comboBox_setting(self):
         tickerlist = pyupbit.get_tickers(fiat='KRW')
         # print(tickerlist)
-
-
 
         coinTickerList = []
 
@@ -101,6 +105,7 @@ class MainWindow(QMainWindow, form_class): # 슬롯 클래스
         # 새로운 코인(바뀐) ticker로 다시 시그널 클래스로 객체를 선언
         self.cvt.coinDateSent.connect(self.fillCoinData)
         # 다시 시그널 함수 호출-> 새로운 ticker의 정보를 가진 시그널 함수가 실행
+        self.cvt.alarmDataSent.connect(self.alarmCheck)
         self.cvt.start()  # 시그널 함수의 쓰레드를 시작
 
     # 시그널클래스에서 보내준 코인정보를 ui에 출력해주는 슬롯함수
@@ -123,6 +128,27 @@ class MainWindow(QMainWindow, form_class): # 슬롯 클래스
         else:
             self.coin_changelate_label.setStyleSheet("background-color:red;color:white;")
             self.coin_price_label.setStyleSheet('color:red;')
+
+
+    def alarmButtonAction(self):
+        if self.alarmButton.text() == '알람시작':
+            self.alarmButton.setText('알람중지')
+        else:
+            self.alarmButton.setText('알람시작')
+
+    def alarmCheck(self, trade_price): # 알람체크 슬롯
+        if self.alarmButton.text() == '알람중지':
+            if self.alarm_price1.text() == '' or self.alarm_price2.text() == '':
+                QMessageBox.warning(self,'입력오류!','알람금액을 모두 입력하신 후에 알람버튼을 눌러주세요!!')
+                self.alarmButton.setText('알람시작')
+            else:
+                alarm_price1 = float(self.alarm_price1.text())
+                alarm_price2 = float(self.alarm_price2.text())
+
+                if trade_price >= alarm_price1:
+                    QMessageBox.warning(self, '매도가격도달', f'얼른 {self.ticker}를 매도하세요!!')
+                if trade_price <= alarm_price2:
+                    QMessageBox.warning(self, '매수가격도달', f'얼른 {self.ticker}를 매수하세요!!')
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
