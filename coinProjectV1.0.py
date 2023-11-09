@@ -180,7 +180,7 @@ class TelegramBotClass(QThread): # 텔레그램 메시지 봇 클래스
         self.bot = telegram.Bot(token=token)
     def telegramBot(self, text):
     # 텔레그램으로 보낼 메시지를 인수로 넣어서 호출하면 해당 텍스트를 텔레그램 계정으로 전송하는 매서드
-        asyncio.run(self.bot.sendMessage(chat_id = 10394369, text=text))
+        asyncio.run(self.bot.sendMessage(chat_id = 6843986326, text=text))
 
 
 if __name__ == "__main__":
